@@ -1,3 +1,5 @@
+import time
+
 def to2Int(x):
     # argument: int (>=0, <65536)
     # return upper int and lower int
@@ -6,6 +8,25 @@ def to2Int(x):
         return
     
     return [x//(16**2), x%(16**2)]
+
+def to4Int(x):
+    # argument: int (>= -16**8/2, < 16**8/2)
+    if (x < -16**8/2 or x >= 16**8/2):
+        print("error: cannot convert " + str(x) + " into 4 bytes")
+        return
+    
+    if(x >= 0):
+        pass
+    else:
+        x += 16**8
+
+    res = []
+    for _ in range(4):
+        res.append(x%(16**2))
+        x //= 16**2
+    res.reverse()
+
+    return res
 
 def calcCRC(command):
     # calculate last 2 bytes of command (= CRC-16 error check)
@@ -43,6 +64,28 @@ def genCommand(slaveAddress, functionCode, dataStart, dataNum, data):
     res += to2Int(dataStart)
     res += to2Int(dataNum)
 
+    res += [2*dataNum]
+
+    # e in data: 4 byte?
+    for e in data:
+        res += to4Int(e)
+
+    res = bytes(res)
+    res = calcCRC(res)
+
+    return res
+
+def genCommand2(slaveAddress, functionCode, dataStart, data):
+    # generate command (ZHOME)
+    
+    # array of int
+    res = []
+    res += [slaveAddress]
+    res += [functionCode]
+
+    # dataStart, dataNum: 2 byte
+    res += to2Int(dataStart)
+
     # e in data: 2 byte
     for e in data:
         res += to2Int(e)
@@ -53,46 +96,23 @@ def genCommand(slaveAddress, functionCode, dataStart, dataNum, data):
     return res
 
 """
-def toBytes(byte):
-    # if byte in [9, 10, 13, 32, 33, ..., 125, 126], error
-    
-    # <int> 97 = <bytes> b"a"
-    pass
-
-for i in range(256):
-    #print(i, format(i, "x"), hex(i), "%02x" % i)
-    #全部str
-    #print(type(format(i, "x")), type(hex(i)), type("%02x" % i))
-    #print(bytes(hex(i)))
-    s = "\\x" + ("%02x" % i)
-    print(s, type(s))
-    t = s.encode()
-    print(t, type(t))
-"""
-
-"""
-# 見た目がエンコードされてるだけで実は動くのでは？？？
-command = b"\x01\x03\x00\x7f\x13\x03"
-command = calcCRC(command)
-print(command)
-for byte in command:
-    print(byte)
-"""
-
-"""
-# parameters
 slaveAddress = 1
-functionCode = 3
-dataStart = 127
-dataNum = 1
-data = [8500]
-command = genCommand(slaveAddress, functionCode, dataStart, dataNum, data)
+functinoCode = 0x10
+dataStart = 0x1802 #6146
+dataNum = 4
+displacement = 1000
+velocity = 5000
+data = [displacement, velocity]
+command = genCommand(slaveAddress, functinoCode, dataStart, dataNum, data)
 print(command)
+
+res = to4Int(5000)
+print(res)
+res = bytes(res)
+print(res)
 """
-"""
-for byte in command:
-    print(byte, "%02x" % byte)
-"""
+
+print(bytes(to4Int(-5000)))
 
 def moveRelative(slaveAddress, dist):
     data = [dist]
@@ -100,13 +120,23 @@ def moveRelative(slaveAddress, dist):
     # cliant.write(command)
     print(command)
 
-def moveToHome(slaveAddress):
-    data = []
-    command = genCommand(slaveAddress, 0, 0, 0, data)
-    # cliant.write(command)
+def ZHOMEOn(slaveAddress):
+    functinoCode = 0x06
+    dataStart = 0x007D
+    data = [0x0010]
+    command = genCommand2(slaveAddress, functinoCode, dataStart, data)
     print(command)
 
-slaveAddress = 1
-dist = 8500
-moveToHome(slaveAddress)
-moveRelative(slaveAddress, dist)
+def ZHOMEOff(slaveAddress):
+    functinoCode = 0x06
+    dataStart = 0x007D
+    data = [0x0000]
+    command = genCommand2(slaveAddress, functinoCode, dataStart, data)
+    print(command)
+
+def moveToHome(slaveAddress):
+    ZHOMEOn(1)
+    time.sleep(5)
+    ZHOMEOff(1)
+
+moveToHome(1)
