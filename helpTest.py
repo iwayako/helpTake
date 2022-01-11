@@ -1,3 +1,4 @@
+from abc import get_cache_token
 import time
 
 def to2Int(x):
@@ -95,36 +96,12 @@ def genCommand2(slaveAddress, functionCode, dataStart, data):
 
     return res
 
-"""
-slaveAddress = 1
-functinoCode = 0x10
-dataStart = 0x1802 #6146
-dataNum = 4
-displacement = 1000
-velocity = 5000
-data = [displacement, velocity]
-command = genCommand(slaveAddress, functinoCode, dataStart, dataNum, data)
-print(command)
-
-res = to4Int(5000)
-print(res)
-res = bytes(res)
-print(res)
-"""
-
-print(bytes(to4Int(-5000)))
-
-def moveRelative(slaveAddress, dist):
-    data = [dist]
-    command = genCommand(slaveAddress, 10, 0, 2, data)
-    # cliant.write(command)
-    print(command)
-
 def ZHOMEOn(slaveAddress):
     functinoCode = 0x06
     dataStart = 0x007D
     data = [0x0010]
     command = genCommand2(slaveAddress, functinoCode, dataStart, data)
+    #client.write(command)
     print(command)
 
 def ZHOMEOff(slaveAddress):
@@ -132,11 +109,52 @@ def ZHOMEOff(slaveAddress):
     dataStart = 0x007D
     data = [0x0000]
     command = genCommand2(slaveAddress, functinoCode, dataStart, data)
+    #client.write(command)
     print(command)
 
 def moveToHome(slaveAddress):
-    ZHOMEOn(1)
+    ZHOMEOn(slaveAddress)
     time.sleep(5)
-    ZHOMEOff(1)
+    ZHOMEOff(slaveAddress)
 
-moveToHome(1)
+#moveToHome(1)
+#moveToHome(2)
+
+slaveAddress = 1
+functionCode = 0x10
+dataStart = 0x0058
+dataNum = 16
+
+driveData = 0 # No.
+driveWay = 2 # 2: relative
+displacement = 8500
+velocity = 2000
+startRate = 1500
+stopRate = 1500
+electricCurrent = 1000 # >=0, <=1000
+reflection = 1 # 1: reflect all data
+
+data = [driveData, driveWay, displacement, velocity, startRate, stopRate, electricCurrent, reflection]
+
+command = genCommand(slaveAddress, functionCode, dataStart, dataNum, data)
+print(command)
+
+def moveRelative(slaveAddress, displacement):
+    functionCode = 0x10
+    dataStart = 0x0058
+    dataNum = 16
+
+    driveData = 0 # No.
+    driveWay = 2 # 2: relative
+    velocity = 2000
+    startRate = 1500
+    stopRate = 1500
+    electricCurrent = 1000 # >=0, <=1000
+    reflection = 1 # 1: reflect all data
+
+    data = [driveData, driveWay, displacement, velocity, startRate, stopRate, electricCurrent, reflection]
+
+    command = genCommand(slaveAddress, functionCode, dataStart, dataNum, data)
+    print(command)
+
+moveRelative(1, 8500)
